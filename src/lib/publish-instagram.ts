@@ -1,4 +1,5 @@
 import { buildInstagramCaption } from "./caption";
+import { imageUrlForInstagramPublish } from "./instagram-image-url";
 import { instagramPublishPhoto } from "./instagram";
 import { markEventPublished, selectEventsToPublishToday } from "./sync-events";
 import type { EventRow } from "@/db/schema";
@@ -59,7 +60,10 @@ async function publishOneEvent(
   const { postId } = await instagramPublishPhoto({
     igUserId,
     accessToken: token,
-    imageUrl: row.imageUrl,
+    imageUrl: imageUrlForInstagramPublish({
+      id: row.id,
+      imageUrl: row.imageUrl,
+    }),
     caption,
   });
 
