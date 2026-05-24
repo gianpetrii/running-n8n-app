@@ -1,0 +1,35 @@
+# Opcional: más de un disparo por día (Vercel Hobby limita cron a 1/día).
+# Requiere secrets: APP_URL (https://tu-app.vercel.app), CRON_SECRET (mismo que en Vercel).
+
+name: Jobs cron
+on:
+  schedule:
+    - cron: "25 2,14 * * *"
+  workflow_dispatch:
+
+jobs:
+  sync-events:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync events
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          test -n "$APP_URL" && test -n "$CRON_SECRET"
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${APP_URL}/api/jobs/sync-events"
+
+  publish-instagram:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish Instagram
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          test -n "$APP_URL" && test -n "$CRON_SECRET"
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${APP_URL}/api/jobs/publish-instagram"

@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/jobs/sync-events",
+      "schedule": "30 9 * * *"
+    },
+    {
+      "path": "/api/jobs/publish-instagram",
+      "schedule": "0 12 * * *"
+    }
+  ]
+}
