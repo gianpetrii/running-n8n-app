@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/jobs/publish-instagram",
-      "schedule": "0 12 * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
