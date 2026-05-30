@@ -24,15 +24,6 @@ function parseYmd(s: string): Date {
   return new Date(Date.UTC(y, mo - 1, d));
 }
 
-function addUtcDays(ymd: string, days: number): string {
-  const dt = parseYmd(ymd);
-  dt.setUTCDate(dt.getUTCDate() + days);
-  const y = dt.getUTCFullYear();
-  const m = String(dt.getUTCMonth() + 1).padStart(2, "0");
-  const d = String(dt.getUTCDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
 function subUtcMonths(ymd: string, months: number): string {
   const dt = parseYmd(ymd);
   dt.setUTCMonth(dt.getUTCMonth() - months);
@@ -64,7 +55,7 @@ export function computePublishAtAndStatus(input: {
   if (threeMonthsBefore >= today) {
     publishAt = threeMonthsBefore;
   } else {
-    publishAt = addUtcDays(today, 1);
+    publishAt = today;
   }
 
   return { publishAt, status: "ready" };

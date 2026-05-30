@@ -7,8 +7,17 @@ import type { EventRow } from "@/db/schema";
 export type PublishSummary = {
   candidates: number;
   published: number;
+  skippedDueToLimit: number;
   failures: { id: string; message: string }[];
 };
+
+function publishMaxPerRun(): number | undefined {
+  const raw = process.env.PUBLISH_MAX_PER_RUN;
+  if (!raw?.trim()) return undefined;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 1) return undefined;
+  return Math.floor(n);
+}
 
 export async function runPublishInstagram(): Promise<PublishSummary> {
   const igUserId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
@@ -19,7 +28,19 @@ export async function runPublishInstagram(): Promise<PublishSummary> {
     );
   }
 
-  const rows = await selectEventsToPublishToday();
+  const allDue = await selectEventsToPublishToday();
+  const sorted = [...allDue].sort((a, b) => {
+    const pa = a.publishAt ?? "";
+    const pb = b.publishAt ?? "";
+    if (pa !== pb) return pa.localeCompare(pb);
+    return a.createdAt.toISOString().localeCompare(b.createdAt.toISOString());
+  });
+  const maxPerRun = publishMaxPerRun();
+  const rows =
+    maxPerRun != null ? sorted.slice(0, maxPerRun) : sorted;
+  const skippedDueToLimit =
+    maxPerRun != null ? Math.max(0, sorted.length - rows.length) : 0;
+
   const failures: { id: string; message: string }[] = [];
   let published = 0;
 
@@ -35,7 +56,12 @@ export async function runPublishInstagram(): Promise<PublishSummary> {
     }
   }
 
-  return { candidates: rows.length, published, failures };
+  return {
+    candidates: allDue.length,
+    published,
+    skippedDueToLimit,
+    failures,
+  };
 }
 
 async function publishOneEvent(
@@ -57,13 +83,15 @@ async function publishOneEvent(
     throw new Error("Missing image_url");
   }
 
+  const igImageUrl = imageUrlForInstagramPublish({
+    id: row.id,
+    imageUrl: row.imageUrl,
+  });
+
   const { postId } = await instagramPublishPhoto({
     igUserId,
     accessToken: token,
-    imageUrl: imageUrlForInstagramPublish({
-      id: row.id,
-      imageUrl: row.imageUrl,
-    }),
+    imageUrl: igImageUrl,
     caption,
   });
 

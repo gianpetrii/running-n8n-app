@@ -99,6 +99,31 @@ describe("computePublishAtAndStatus", () => {
     expect(r.status).toBe("incomplete");
     expect(r.publishAt).toBeNull();
   });
+
+  it("catch-up uses today (not tomorrow) when within 3 months of race", () => {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Argentina/Buenos_Aires",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date());
+    const y = parts.find((p) => p.type === "year")?.value;
+    const m = parts.find((p) => p.type === "month")?.value;
+    const d = parts.find((p) => p.type === "day")?.value;
+    const today = `${y}-${m}-${d}`;
+    const [ty, tmo, td] = today.split("-").map(Number);
+    const raceDt = new Date(Date.UTC(ty, tmo - 1, td));
+    raceDt.setUTCMonth(raceDt.getUTCMonth() + 2);
+    const raceAt = `${raceDt.getUTCFullYear()}-${String(raceDt.getUTCMonth() + 1).padStart(2, "0")}-${String(raceDt.getUTCDate()).padStart(2, "0")}`;
+
+    const r = computePublishAtAndStatus({
+      raceAt,
+      location: "X, Y, Argentina",
+      distances: "10K",
+    });
+    expect(r.status).toBe("ready");
+    expect(r.publishAt).toBe(today);
+  });
 });
 
 describe("images", () => {
